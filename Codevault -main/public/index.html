@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>CodeVault | Verify Access</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: radial-gradient(circle at top, #0f2027, #000);
+  color: #fff;
+}
+
+/* MAIN CARD */
+.container {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px 24px;
+  border-radius: 18px;
+
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* LOGO */
+.logo {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 14px;
+  border-radius: 16px;
+}
+
+/* TITLE */
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  margin: 8px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #bdbdbd;
+  margin-bottom: 22px;
+}
+
+/* DESCRIPTION */
+.desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #d1d1d1;
+  margin-bottom: 26px;
+}
+
+/* BUTTON */
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+
+  background: linear-gradient(135deg, #ff7a18, #ffb347);
+  color: #000;
+
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:active {
+  transform: scale(0.97);
+  box-shadow: 0 0 0 rgba(0,0,0,0);
+}
+
+/* RESULT */
+#result {
+  margin-top: 18px;
+  font-size: 14px;
+}
+
+.success {
+  color: #2ea6ff;
+}
+
+.error {
+  color: #ff4d4f;
+}
+
+/* FOOTER LINK */
+.support {
+  display: block;
+  margin-top: 24px;
+  font-size: 13px;
+  color: #9aa4ff;
+  text-decoration: none;
+}
+
+.support:hover {
+  text-decoration: underline;
+}
+
+/* =========================
+   RESPONSIVE (MOBILE FIRST)
+   ========================= */
+
+@media (max-width: 480px) {
+  body {
+    padding: 16px;
+  }
+
+  .container {
+    max-width: 100%;
+    padding: 24px 18px;
+    border-radius: 16px;
+  }
+
+  .logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+
+  .desc {
+    font-size: 13px;
+    margin-bottom: 22px;
+  }
+
+  button {
+    padding: 14px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  .support {
+    font-size: 12px;
+  }
+}
+
+/* EXTRA SMALL DEVICES (old Android / very small phones) */
+@media (max-width: 360px) {
+  .title {
+    font-size: 20px;
+  }
+
+  .desc {
+    font-size: 12.5px;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 12px;
+  }
+}
+
+
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- LOGO -->
+  <img src="../src/assets/Codevault2026.jpg" class="logo" alt="CodeVault Logo" />
+
+  <div class="title">CodeVault</div>
+  <div class="subtitle">Secure Access Verification</div>
+
+  <div class="desc">
+    To continue, please verify your access.  
+    This helps us protect CodeVault content and ensure fair usage.
+  </div>
+
+  <button onclick="verify()">Verify Access</button>
+
+  <div id="result"></div>
+
+  <a class="support" href="https://t.me/tech_neo_bot">
+    Need help? Contact CodeVault Support
+  </a>
+
+</div>
+
+</body>
+</html>
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  let verified="no";
+
+  async function verify() {
+    const el = document.getElementById("result");
+    if(verified=="yes"){
+      el.innerText="You are already verified!";
+      return;
+    }else if(verified=="fake"){
+      el.innerText="Start again complete process, you violated the rules!";
+      return;
+    }
+    const initData = tg.initData;
+    const start_param = new URLSearchParams(initData).get("start_param");
+    let endpoint="";
+    if(start_param.startsWith("first_")){
+      endpoint="/api/first";
+    }else if(start_param.startsWith("final_")){
+      endpoint="/api/final";
+    }
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      verified="yes";
+      el.innerText="Verification successful!,wait for the link";
+      if(endpoint=="/api/first"){
+        Telegram.WebApp.openLink(data.link,{
+        try_browser:'chrome',
+        try_instant_view:false
+      });
+      }else{
+        Telegram.WebApp.openTelegramLink(data.link);
+      }
+      
+    } else {
+      verified="fake";
+      el.innerText = data.error || "Verification failed";
+    }
+  }
+</script>
+
+</body>
+</html>
